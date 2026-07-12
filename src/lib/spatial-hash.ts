@@ -5,6 +5,8 @@ import sharedSource from './spatial-hash.wgsl?raw'
 
 /** Uniform-grid counting sort for up to 16,384 particles and 4,096 cells. */
 export class SpatialHash {
+  private readonly device: GPUDevice
+  readonly particleCount: number
   readonly cellCounts: GPUBuffer
   readonly cellStarts: GPUBuffer
   readonly sortedIndices: GPUBuffer
@@ -22,12 +24,14 @@ export class SpatialHash {
    * The final cellStarts entry is a sentinel, making every cell range half-open.
    */
   constructor(
-    private readonly device: GPUDevice,
-    readonly particleCount: number,
+    device: GPUDevice,
+    particleCount: number,
     cellSize: number,
     origin: [number, number, number] = [-8, -2, -8],
     dimensions: [number, number, number] = [16, 16, 16],
   ) {
+    this.device = device
+    this.particleCount = particleCount
     this.cellCount = dimensions[0] * dimensions[1] * dimensions[2]
     if (particleCount > 16_384 || this.cellCount > 4_096) throw new Error('spatial-hash limits exceeded')
     const storage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
