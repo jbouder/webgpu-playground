@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import type { DemoInstance } from '../../gpu/types'
-import type { HolotableInstance } from './index'
+import type { VolumetricHologramInstance } from './index'
 
-export function HolotableControls({ instance }: { instance: DemoInstance }) {
-  const holotable = instance as HolotableInstance
-  const p = holotable.params
+export function VolumetricHologramControls({ instance }: { instance: DemoInstance }) {
+  const volumetricHologram = instance as VolumetricHologramInstance
+  const p = volumetricHologram.params
   const [, force] = useState(0)
   const rerender = () => force((n) => n + 1)
 
   return (
     <div className="controls">
-      <h2 className="controls-title">Holotable</h2>
+      <h2 className="controls-title">Volumetric Hologram</h2>
       <div className="control-group">
         <span className="group-label">Camera</span>
         <label className="control-row control-check">
@@ -21,7 +21,7 @@ export function HolotableControls({ instance }: { instance: DemoInstance }) {
           <span>Auto-rotate</span>
         </label>
         <button type="button" onClick={() => {
-          holotable.resetCamera()
+          volumetricHologram.resetCamera()
           rerender()
         }}>Reset camera</button>
       </div>

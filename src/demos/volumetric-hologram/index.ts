@@ -20,7 +20,7 @@ import shaderSource from './raymarch.wgsl?raw'
 const UNIFORM_FLOATS = 24
 const UNIFORM_BYTES = UNIFORM_FLOATS * 4
 
-export interface HolotableParams {
+export interface VolumetricHologramParams {
   autoRotate: boolean
   steps: number
   densityScale: number
@@ -34,8 +34,8 @@ export interface HolotableParams {
   distance: number
 }
 
-export interface HolotableInstance extends DemoInstance {
-  params: HolotableParams
+export interface VolumetricHologramInstance extends DemoInstance {
+  params: VolumetricHologramParams
   resetCamera(): void
 }
 
@@ -53,31 +53,31 @@ const cross = (
   a[0] * b[1] - a[1] * b[0],
 ]
 
-export async function init(ctx: DemoContext): Promise<HolotableInstance> {
+export async function init(ctx: DemoContext): Promise<VolumetricHologramInstance> {
   const { device, context, format, canvas } = ctx
   const module = device.createShaderModule({
-    label: 'holotable-shader',
+    label: 'volumetric-hologram-shader',
     code: shaderSource,
   })
   const uniformBuffer = device.createBuffer({
-    label: 'holotable-uniforms',
+    label: 'volumetric-hologram-uniforms',
     size: UNIFORM_BYTES,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   })
   const pipeline = device.createRenderPipeline({
-    label: 'holotable-pipeline',
+    label: 'volumetric-hologram-pipeline',
     layout: 'auto',
     vertex: { module, entryPoint: 'vs' },
     fragment: { module, entryPoint: 'fs', targets: [{ format }] },
     primitive: { topology: 'triangle-list' },
   })
   const bindGroup = device.createBindGroup({
-    label: 'holotable-bindgroup',
+    label: 'volumetric-hologram-bindgroup',
     layout: pipeline.getBindGroupLayout(0),
     entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
   })
 
-  const params: HolotableParams = {
+  const params: VolumetricHologramParams = {
     autoRotate: true,
     steps: 96,
     densityScale: 1,
@@ -178,7 +178,7 @@ export async function init(ctx: DemoContext): Promise<HolotableInstance> {
     ])
     device.queue.writeBuffer(uniformBuffer, 0, uniforms)
 
-    const encoder = device.createCommandEncoder({ label: 'holotable-frame' })
+    const encoder = device.createCommandEncoder({ label: 'volumetric-hologram-frame' })
     const pass = encoder.beginRenderPass({
       colorAttachments: [{
         view: context.getCurrentTexture().createView(),
@@ -207,9 +207,9 @@ export async function init(ctx: DemoContext): Promise<HolotableInstance> {
   return { params, resetCamera, frame, dispose }
 }
 
-export const holotableDemo: Demo = {
-  id: 'holotable',
-  title: 'Holotable',
+export const volumetricHologramDemo: Demo = {
+  id: 'volumetric-hologram',
+  title: 'Volumetric Hologram',
   description:
     'A volumetric hologram: an SDF density field raymarched front-to-back and shaded with fresnel edges, scanlines, and chromatic drift. Drag to orbit.',
   init,
