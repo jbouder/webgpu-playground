@@ -33,7 +33,9 @@ export class SpatialHash {
     this.device = device
     this.particleCount = particleCount
     this.cellCount = dimensions[0] * dimensions[1] * dimensions[2]
-    if (particleCount > 16_384 || this.cellCount > 4_096) throw new Error('spatial-hash limits exceeded')
+    if (particleCount > 16_384 || this.cellCount > 4_096) {
+      throw new Error(`spatial-hash limits exceeded: particles=${particleCount} (max 16,384), cells=${this.cellCount} (max 4,096)`)
+    }
     const storage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST
     this.cellCounts = device.createBuffer({ label: 'spatial-hash-counts', size: this.cellCount * 4, usage: storage })
     this.cellStarts = device.createBuffer({ label: 'spatial-hash-starts', size: (this.cellCount + 1) * 4, usage: storage })

@@ -21,6 +21,8 @@ const PARAM_BYTES = 32
 // Render: mat4 view-projection (16 floats), light.xyz + padding = 80 bytes.
 const RENDER_BYTES = 80
 const WG = 64
+/** Maximum constraint compliance at zero stiffness; smaller values are stiffer. */
+const BASE_COMPLIANCE = 0.0002
 
 type Resources = { positions: GPUBuffer; previous: GPUBuffer; velocities: GPUBuffer; normals: GPUBuffer; deltas: GPUBuffer; constraints: GPUBuffer[]; indices: GPUBuffer; hash: SpatialHash; distanceGroups: GPUBindGroup[]; collisionGroup: GPUBindGroup; collisionApplyGroup: GPUBindGroup; integrateGroup: GPUBindGroup; finalizeGroup: GPUBindGroup; normalsGroup: GPUBindGroup; renderGroup: GPUBindGroup; count: number; resolution: number }
 
@@ -32,8 +34,8 @@ function makeCloth(n: number, stiffness: number) {
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
     const i = y * n + x; const o = i * 4
     positions.set([(x / (n - 1) - .5) * 4, 3.2, (y / (n - 1) - .5) * 4, y === 0 && (x === 0 || x === n - 1) ? 0 : 1], o)
-    if (x > 0) links[(y & 1) * 2 + (x & 1)].push([i - 1, i, spacing, (1 - stiffness) * .0002])
-    if (y > 0) links[4 + (x & 1) * 2 + (y & 1)].push([i - n, i, spacing, (1 - stiffness) * .0002])
+    if (x > 0) links[(y & 1) * 2 + (x & 1)].push([i - 1, i, spacing, (1 - stiffness) * BASE_COMPLIANCE])
+    if (y > 0) links[4 + (x & 1) * 2 + (y & 1)].push([i - n, i, spacing, (1 - stiffness) * BASE_COMPLIANCE])
   }
   return { positions, links }
 }
