@@ -310,6 +310,6 @@ export const shaderFluidDemo: Demo = {
   id: 'shader-fluid',
   title: 'Shader + Fluid',
   description:
-    'An animated plasma shader as a background layer with a Gray-Scott reaction-diffusion fluid composited on top. Toggle each layer, recolor the shader, and scroll over the canvas to drive the fluid.',
+    'An animated plasma shader with rippling distortion, scanlines, and vignette as a background layer for a Gray-Scott reaction-diffusion fluid. Toggle each layer, recolor the shader, and scroll over the canvas to drive the fluid.',
   init,
 }

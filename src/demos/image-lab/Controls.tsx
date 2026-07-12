@@ -1,9 +1,10 @@
 import { useEffect, useReducer, useState } from 'react'
 import type { DemoInstance } from '../../gpu/types'
-import type { ImageLabInstance } from './index'
+import type { ImageFilters } from '../../lib/gpu-image'
+import type { MediaLabInstance } from './index'
 
 interface SliderSpec {
-  key: keyof ImageLabInstance['params']
+  key: keyof ImageFilters
   label: string
   min: number
   max: number
@@ -27,11 +28,12 @@ const SLIDERS: SliderSpec[] = [
 
 export function ImageLabControls({ instance }: { instance: DemoInstance }) {
   // The demo module owns the concrete type; the registry only knows DemoInstance.
-  const inst = instance as ImageLabInstance
+  const inst = instance as MediaLabInstance
 
   const [, bump] = useReducer((n: number) => n + 1, 0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [cameraActive, setCameraActive] = useState(false)
 
   useEffect(() => {
     inst.onImageChange = () => bump()
@@ -61,21 +63,55 @@ export function ImageLabControls({ instance }: { instance: DemoInstance }) {
     }
   }
 
+  const onImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCameraActive(false)
+    void onFile(e)
+  }
+
   const splitOn = inst.params.split >= 0
+
+  const startCamera = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      await inst.startCamera()
+      setCameraActive(true)
+      bump()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start the camera.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="controls">
-      <h2 className="controls-title">Image Lab</h2>
+      <h2 className="controls-title">Media Lab</h2>
 
       <p className="controls-stat">
-        Source: <span>{inst.info.width}×{inst.info.height}</span>
+        {cameraActive ? 'Live feed' : 'Source'}: <span>{inst.info.width}×{inst.info.height}</span>
       </p>
 
       <div className="control-group">
+        <span className="group-label">Source</span>
         <label className="file-btn mixer-add">
           {loading ? 'Decoding…' : '⬆ Upload image'}
-          <input type="file" accept="image/*" hidden onChange={onFile} disabled={loading} />
+          <input type="file" accept="image/*" hidden onChange={onImageFile} disabled={loading} />
         </label>
+        <div className="row">
+          <button type="button" className="ghost" onClick={() => void startCamera()} disabled={loading || cameraActive}>
+            📷 Use camera
+          </button>
+          {cameraActive && (
+            <button type="button" className="ghost" onClick={() => {
+              inst.stopCamera()
+              setCameraActive(false)
+              bump()
+            }}>
+              Stop camera
+            </button>
+          )}
+        </div>
         {error && <p className="panel-status-sub error">{error}</p>}
       </div>
 
@@ -102,6 +138,19 @@ export function ImageLabControls({ instance }: { instance: DemoInstance }) {
 
       <div className="control-group">
         <span className="group-label">Compare</span>
+        {cameraActive && (
+          <label className="control-row control-check">
+            <input
+              type="checkbox"
+              checked={inst.params.mirror}
+              onChange={(e) => {
+                inst.params.mirror = e.target.checked
+                bump()
+              }}
+            />
+            <span>Mirror (selfie)</span>
+          </label>
+        )}
         <label className="control-row control-check">
           <input
             type="checkbox"
@@ -143,8 +192,8 @@ export function ImageLabControls({ instance }: { instance: DemoInstance }) {
       </button>
 
       <p className="controls-hint">
-        Each filter is a WebGPU compute pass over ping-pong textures. The chain only re-runs when a
-        value changes. Left of the split shows the untouched original.
+        Each filter is a WebGPU compute pass over ping-pong textures. Live video runs every frame;
+        images only re-run when a value changes. Left of the split shows the untouched original.
       </p>
     </div>
   )
