@@ -1,0 +1,3 @@
+struct Params { gravity:f32,wind:f32,h:f32,radius:f32,count:u32,resolution:u32,_pad:vec2u };
+@group(0) @binding(0) var<uniform> p:Params; @group(0) @binding(1) var<storage,read> pos:array<vec4f>; @group(0) @binding(2) var<storage,read_write> normals:array<vec4f>;
+@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id:vec3u){if(id.x>=p.count){return;}let n=p.resolution;let x=id.x%n;let y=id.x/n;let l=max(x,1u);let r=min(x+1u,n-1u);let d=max(y,1u);let u=min(y+1u,n-1u);let dx=pos[y*n+r].xyz-pos[y*n+l].xyz;let dy=pos[u*n+x].xyz-pos[d*n+x].xyz;normals[id.x]=vec4f(normalize(cross(dy,dx)),0.0);}
