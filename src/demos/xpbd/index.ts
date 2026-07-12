@@ -26,13 +26,14 @@ type Resources = { positions: GPUBuffer; previous: GPUBuffer; velocities: GPUBuf
 
 function makeCloth(n: number, stiffness: number) {
   const positions = new Float32Array(n * n * 4)
-  const links: Array<Array<[number, number, number, number]>> = [[], [], [], []]
+  // Four parity colors per direction keep every distance batch independent.
+  const links: Array<Array<[number, number, number, number]>> = [[], [], [], [], [], [], [], []]
   const spacing = 4 / (n - 1)
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
     const i = y * n + x; const o = i * 4
     positions.set([(x / (n - 1) - .5) * 4, 3.2, (y / (n - 1) - .5) * 4, y === 0 && (x === 0 || x === n - 1) ? 0 : 1], o)
     if (x > 0) links[(y & 1) * 2 + (x & 1)].push([i - 1, i, spacing, (1 - stiffness) * .0002])
-    if (y > 0) links[(x & 1) * 2 + (y & 1)].push([i - n, i, spacing, (1 - stiffness) * .0002])
+    if (y > 0) links[4 + (x & 1) * 2 + (y & 1)].push([i - n, i, spacing, (1 - stiffness) * .0002])
   }
   return { positions, links }
 }
@@ -90,7 +91,27 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
     const u = new ArrayBuffer(PARAM_BYTES); const f = new Float32Array(u); const ints = new Uint32Array(u); f.set([params.gravity, params.wind * Math.sin(elapsed), h, params.particleRadius]); ints[4] = r.count; ints[5] = r.resolution; device.queue.writeBuffer(paramBuffer, 0, u); device.queue.writeBuffer(dampingBuffer, 0, new Float32Array([params.damping]))
     const vp = mat4.create(); const eye = vec3.fromValues(7 * Math.cos(elevation) * Math.sin(azimuth), 3 + 7 * Math.sin(elevation), 7 * Math.cos(elevation) * Math.cos(azimuth)); mat4.perspective(vp, Math.PI / 4, Math.max(canvas.width, 1) / Math.max(canvas.height, 1), .1, 50); mat4.lookAt(vp, eye, vec3.fromValues(0, 1.4, 0), vec3.fromValues(0, 1, 0)); const ru = new Float32Array(20); ru.set(vp); ru.set([4, 7, 4, 0], 16); device.queue.writeBuffer(renderBuffer, 0, ru)
     const encoder = device.createCommandEncoder({ label: 'xpbd-frame' })
-    for (let s = 0; s < Math.max(4, Math.min(20, Math.floor(params.substeps))); s++) { let pass = encoder.beginComputePass({ label: 'xpbd-integrate-pass' }); pass.setPipeline(integrate); pass.setBindGroup(0, r.integrateGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end(); r.hash.build(encoder, r.positions); for (let it = 0; it < params.iterations; it++) { for (let i = 0; i < r.distanceGroups.length; i++) { pass = encoder.beginComputePass({ label: `xpbd-distance-pass-${i}` }); pass.setPipeline(distance); pass.setBindGroup(0, r.distanceGroups[i]); pass.dispatchWorkgroups(Math.ceil((r.constraints[i].size / 16) / WG)); pass.end() } if (params.selfCollision) { pass = encoder.beginComputePass({ label: 'xpbd-collision-pass' }); pass.setPipeline(collision); pass.setBindGroup(0, r.collisionGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end(); pass = encoder.beginComputePass({ label: 'xpbd-collision-apply-pass' }); pass.setPipeline(collisionApply); pass.setBindGroup(0, r.collisionApplyGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end() } } pass = encoder.beginComputePass({ label: 'xpbd-finalize-pass' }); pass.setPipeline(finalize); pass.setBindGroup(0, r.finalizeGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end() }
+    for (let s = 0; s < Math.max(4, Math.min(20, Math.floor(params.substeps))); s++) {
+      let pass = encoder.beginComputePass({ label: 'xpbd-integrate-pass' })
+      pass.setPipeline(integrate); pass.setBindGroup(0, r.integrateGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end()
+      r.hash.build(encoder, r.positions)
+      for (let it = 0; it < params.iterations; it++) {
+        for (let i = 0; i < r.distanceGroups.length; i++) {
+          pass = encoder.beginComputePass({ label: `xpbd-distance-pass-${i}` })
+          pass.setPipeline(distance); pass.setBindGroup(0, r.distanceGroups[i])
+          pass.dispatchWorkgroups(Math.ceil((r.constraints[i].size / 16) / WG)); pass.end()
+        }
+        if (params.selfCollision) {
+          pass = encoder.beginComputePass({ label: 'xpbd-collision-pass' })
+          pass.setPipeline(collision); pass.setBindGroup(0, r.collisionGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end()
+        }
+        // Floor and sphere collision remain active when self collision is disabled.
+        pass = encoder.beginComputePass({ label: 'xpbd-collision-apply-pass' })
+        pass.setPipeline(collisionApply); pass.setBindGroup(0, r.collisionApplyGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end()
+      }
+      pass = encoder.beginComputePass({ label: 'xpbd-finalize-pass' })
+      pass.setPipeline(finalize); pass.setBindGroup(0, r.finalizeGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end()
+    }
     let pass = encoder.beginComputePass({ label: 'xpbd-normals-pass' }); pass.setPipeline(normals); pass.setBindGroup(0, r.normalsGroup); pass.dispatchWorkgroups(Math.ceil(r.count / WG)); pass.end()
     const rp = encoder.beginRenderPass({ label: 'xpbd-render-pass', colorAttachments: [{ view: context.getCurrentTexture().createView(), clearValue: { r: .015, g: .025, b: .05, a: 1 }, loadOp: 'clear', storeOp: 'store' }] }); rp.setPipeline(render); rp.setBindGroup(0, r.renderGroup); rp.setIndexBuffer(r.indices, 'uint32'); rp.drawIndexed(indexCount); rp.end(); device.queue.submit([encoder.finish()])
   }
