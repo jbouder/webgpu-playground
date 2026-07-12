@@ -136,9 +136,9 @@ export async function init(ctx: DemoContext): Promise<HolotableInstance> {
     params.distance = 3.2
   }
 
-  const frame = (dt: number, elapsed: number) => {
+  const frame = (deltaTime: number, elapsed: number) => {
     if (disposed) return
-    if (params.autoRotate) params.yaw += dt * 0.28
+    if (params.autoRotate) params.yaw += deltaTime * 0.28
 
     const cosPitch = Math.cos(params.pitch)
     const origin: [number, number, number] = [
