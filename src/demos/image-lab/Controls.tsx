@@ -1,9 +1,10 @@
 import { useEffect, useReducer, useState } from 'react'
 import type { DemoInstance } from '../../gpu/types'
+import type { ImageFilters } from '../../lib/gpu-image'
 import type { MediaLabInstance } from './index'
 
 interface SliderSpec {
-  key: keyof MediaLabInstance['params']
+  key: keyof ImageFilters
   label: string
   min: number
   max: number

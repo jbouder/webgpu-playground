@@ -152,11 +152,12 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
 
   const frame = () => {
     if (!pipeline.ready) return
-    const isLive = stream?.active && video && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
-    if (isLive && video.videoWidth > 0) {
-      info.width = video.videoWidth
-      info.height = video.videoHeight
-      pipeline.upload(video, info.width, info.height)
+    const currentVideo = stream?.active ? video : null
+    const isLive = currentVideo !== null && currentVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    if (isLive && currentVideo.videoWidth > 0) {
+      info.width = currentVideo.videoWidth
+      info.height = currentVideo.videoHeight
+      pipeline.upload(currentVideo, info.width, info.height)
     }
     const encoder = device.createCommandEncoder({ label: 'image-lab-frame' })
     // Re-run the filter chain only when something changed; the work textures
