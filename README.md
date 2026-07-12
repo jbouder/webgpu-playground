@@ -43,7 +43,9 @@ with hardware acceleration enabled. Browsers without WebGPU get a graceful
   shader hot-reloads.
 - **`src/lib/`** — framework-agnostic helpers reused across demos: `chunk.ts` +
   `vector-store.ts` (retrieval), `audio.ts` (AnalyserNode→GPU FFT bridge),
-  `scales.ts` (CPU-side linear scales/ticks for axes and hit-testing).
+  `scales.ts` (CPU-side linear scales/ticks for axes and hit-testing),
+  `gpu-image.ts` (`ImagePipeline` — ping-pong rgba16float compute filter chain —
+  and `ImageBlitter`, shared by the image and webcam demos).
 
 ### Adding a demo
 
@@ -126,6 +128,22 @@ Each is a self-contained module under `src/demos/`, chosen from the sidebar.
   `fluid-scroll` modules, which it reuses.
 - **3D Point Cloud** (`point-cloud`) — instanced rendering of a procedural galaxy
   with an orbit camera and depth buffer, and a 1k–1M point-count slider.
+- **Image Lab** (`image-lab`) — upload an image (or use the synthetic sample) and
+  stack GPU compute filters: exposure, contrast, saturation, temperature,
+  separable gaussian blur, unsharp, Sobel edges, vignette, grayscale. Each filter
+  is a compute pass over ping-pong `rgba16float` textures (one pass per step, so
+  reads see the previous pass's full output); the chain only re-runs when a value
+  changes, and a draggable before/after split wipes the result against the
+  original. The pipeline and aspect-fit blit live in the reusable
+  `lib/gpu-image.ts` (`ImagePipeline` / `ImageBlitter`), so the webcam demo reuses
+  the same filter chain over live video frames.
+- **Webcam FX** (`webcam-fx`) — the same GPU filter chain applied to a live
+  `getUserMedia` feed in real time. Each frame is copied into a texture
+  (`copyExternalImageToTexture`) and pushed through `lib/gpu-image.ts`, then
+  blitted with an optional mirror (selfie view) and before/after split. Includes
+  one-click presets (B&W, Edges, Dreamy, Cool, Warm) and a PNG snapshot. Camera
+  permission denial / no-camera / camera-busy are handled with a friendly retry;
+  the feed never leaves the browser.
 - **Sound Mixer** (`sound-mixer`) — a multi-track mixer with a live GPU
   visualizer. Built-in loops synthesized in the browser (`loops.ts`) plus
   uploaded-file tracks, each with volume / pan / mute / solo through a Web Audio
@@ -150,9 +168,9 @@ Each is a self-contained module under `src/demos/`, chosen from the sidebar.
   stream back into the chat.
 
 Two shapes of demo:
-- **Canvas demos** (shader-fluid, point-cloud, sound-mixer, crossfilter) provide
-  a React-free `init(ctx)` and run under `CanvasHost` with an optional `Controls`
-  side panel.
+- **Canvas demos** (shader-fluid, point-cloud, image-lab, webcam-fx, sound-mixer,
+  crossfilter) provide a React-free `init(ctx)` and run under `CanvasHost` with an
+  optional `Controls` side panel.
 - **DOM/inference demos** (semantic-search, rag-llm) provide a `Panel` that takes
   over the main area — WebGPU is the compute/inference backend inside Web
   Workers, so there's no canvas or render loop.
