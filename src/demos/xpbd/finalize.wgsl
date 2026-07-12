@@ -1,0 +1,3 @@
+struct Params { gravity: f32, wind: f32, h: f32, radius: f32, count: u32, resolution: u32, _pad: vec2u };
+@group(0) @binding(0) var<uniform> p: Params; @group(0) @binding(1) var<storage,read> pos:array<vec4f>; @group(0) @binding(2) var<storage,read> prev:array<vec4f>; @group(0) @binding(3) var<storage,read_write> vel:array<vec4f>; @group(0) @binding(4) var<uniform> damping:f32;
+@compute @workgroup_size(64) fn main(@builtin(global_invocation_id) id:vec3u){if(id.x>=p.count||pos[id.x].w==0.0){return;}let v=(pos[id.x].xyz-prev[id.x].xyz)/p.h;vel[id.x]=vec4f(clamp(v*(1.0-damping),vec3f(-20.0),vec3f(20.0)),0.0);}

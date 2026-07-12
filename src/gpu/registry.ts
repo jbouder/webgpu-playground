@@ -17,6 +17,8 @@ import { soundMixerDemo } from '../demos/sound-mixer'
 import { SoundMixerControls } from '../demos/sound-mixer/Controls'
 import { crossfilterDemo } from '../demos/crossfilter'
 import { CrossfilterControls } from '../demos/crossfilter/Controls'
+import { xpbdDemo } from '../demos/xpbd'
+import { XpbdControls } from '../demos/xpbd/Controls'
 
 /**
  * Every demo in the playground, in sidebar order. This is the ONE place that
@@ -36,6 +38,7 @@ export const demos: Demo[] = [
   { ...webcamFxDemo, Controls: WebcamFxControls },
   { ...soundMixerDemo, Controls: SoundMixerControls },
   { ...crossfilterDemo, Controls: CrossfilterControls },
+  { ...xpbdDemo, Controls: XpbdControls },
   { ...semanticSearchDemo, Panel: SemanticSearchPanel },
   { ...ragLlmDemo, Panel: RagChatPanel },
 ]
