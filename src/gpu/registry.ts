@@ -9,6 +9,8 @@ import { ragLlmDemo } from '../demos/rag-llm'
 import { RagChatPanel } from '../demos/rag-llm/Panel'
 import { soundMixerDemo } from '../demos/sound-mixer'
 import { SoundMixerControls } from '../demos/sound-mixer/Controls'
+import { crossfilterDemo } from '../demos/crossfilter'
+import { CrossfilterControls } from '../demos/crossfilter/Controls'
 
 /**
  * Every demo in the playground, in sidebar order. This is the ONE place that
@@ -24,6 +26,7 @@ export const demos: Demo[] = [
   { ...shaderFluidDemo, Controls: ShaderFluidControls },
   { ...pointCloudDemo, Controls: PointCloudControls },
   { ...soundMixerDemo, Controls: SoundMixerControls },
+  { ...crossfilterDemo, Controls: CrossfilterControls },
   { ...semanticSearchDemo, Panel: SemanticSearchPanel },
   { ...ragLlmDemo, Panel: RagChatPanel },
 ]

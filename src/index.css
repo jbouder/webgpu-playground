@@ -768,3 +768,36 @@ button.ghost,
   justify-content: center;
   margin-top: 0.7rem;
 }
+
+/* ---- Crossfilter ---- */
+.xf-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.28rem 0;
+  font-size: 0.8rem;
+}
+.xf-swatch {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.xf-legend-label {
+  color: var(--text);
+}
+.xf-legend-range {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.xf-hover .controls-stat {
+  margin-bottom: 0;
+}
+
+.xf-reset {
+  width: 100%;
+  margin-top: 0.4rem;
+}

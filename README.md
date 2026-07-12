@@ -6,8 +6,9 @@ a switcher.
 
 **Design principle:** each demo's GPU code is a plain, framework-agnostic TS
 module under `src/demos/*/`. React is a thin shell (switcher, control panels,
-file upload) and never appears inside the GPU modules — so the useful demos can
-be lifted into another app with no rewrite.
+file upload) and never appears inside the GPU modules — so the useful demos (the
+point cloud and the crossfilter engine especially) can be lifted into another
+app with no rewrite.
 
 ## Getting started
 
@@ -40,6 +41,9 @@ with hardware acceleration enabled. Browsers without WebGPU get a graceful
 - **`src/demos/*/`** — each demo. GPU code is React-free; WGSL is imported with
   Vite's `?raw` suffix (`import shader from './shader.wgsl?raw'`) so editing a
   shader hot-reloads.
+- **`src/lib/`** — framework-agnostic helpers reused across demos: `chunk.ts` +
+  `vector-store.ts` (retrieval), `audio.ts` (AnalyserNode→GPU FFT bridge),
+  `scales.ts` (CPU-side linear scales/ticks for axes and hit-testing).
 
 ### Adding a demo
 
@@ -112,41 +116,43 @@ add_header Cross-Origin-Embedder-Policy credentialless always;
 5. **Unhappy paths handled:** no-WebGPU browsers, `GPUDevice` loss, and canvas
    resize with `devicePixelRatio`.
 
-## Build phases
+## Demos
 
-- [x] **Phase 0 — Scaffold**: core abstractions, `CanvasHost` (RAF + resize +
-      device-loss UI), COOP/COEP.
-- [x] **Phase 1 — Animated fullscreen shader** (`shader-fullscreen`).
-- [x] **Phase 2 — 3D point cloud** (`point-cloud`).
-- [x] **Phase 3 — Fluid scroll background** (`fluid-scroll`).
-- [x] **Phase 4 — Client-side semantic search** (`semantic-search`).
-- [x] **Phase 5 — RAG chat with a browser LLM** (`rag-llm`).
-- [x] **Phase 6 — Sound mixer + reactive visualizer** (`sound-mixer`).
+Each is a self-contained module under `src/demos/`, chosen from the sidebar.
 
-The animated shader and the fluid background are exposed through a combined
-**Shader + Fluid** (`shader-fluid`) demo that composites the plasma shader
-(background layer) with the reaction-diffusion fluid (alpha-blended overlay),
-each independently toggleable (fluid off by default). The standalone
-`shader-fullscreen` and `fluid-scroll` modules remain and are reused by it. The
-**3D Point Cloud** is its own demo (with a 1k–1M point-count slider).
+- **Shader + Fluid** (`shader-fluid`) — an animated plasma shader composited with
+  a Gray-Scott reaction-diffusion fluid (alpha-blended overlay), each layer
+  independently toggleable. Built from the standalone `shader-fullscreen` and
+  `fluid-scroll` modules, which it reuses.
+- **3D Point Cloud** (`point-cloud`) — instanced rendering of a procedural galaxy
+  with an orbit camera and depth buffer, and a 1k–1M point-count slider.
+- **Sound Mixer** (`sound-mixer`) — a multi-track mixer with a live GPU
+  visualizer. Built-in loops synthesized in the browser (`loops.ts`) plus
+  uploaded-file tracks, each with volume / pan / mute / solo through a Web Audio
+  graph (`mixer.ts`). The master bus feeds an `AnalyserNode`; `lib/audio.ts`
+  bridges that FFT into a GPU storage buffer each frame, driving a radial
+  spectrum-analyzer shader.
+- **Crossfilter Dashboard** (`crossfilter`) — five linked panels (three
+  histograms, a time series, a latency×cost density heatmap) over 1M–10M rows of
+  synthetic LLM telemetry. Drag a range on any histogram and every other panel
+  refilters instantly; brushes compound across dimensions. The dataset is
+  pre-binned and packed one u32 per row (`data.ts`), uploaded once as a columnar
+  buffer, and an atomic-scatter compute pass (`aggregate.wgsl`) rebuilds every
+  panel's histogram on each brush change — the CPU never rescans the rows.
+  `engine.ts` (React-free) owns the buffers and brush state; panels render into
+  viewports of one canvas (`render.wgsl`). Interactive at 10M rows.
+- **Semantic Search** (`semantic-search`) — paste a document; transformers.js
+  embeds it in a Web Worker (WebGPU backend), and queries retrieve the most
+  relevant chunks by cosine similarity, fully local.
+- **RAG Chat** (`rag-llm`) — reuses the semantic-search retrieval and adds a
+  WebLLM generation worker. A question retrieves the top passages as grounded
+  context for a small instruct model (default Llama-3.2-1B, swappable); tokens
+  stream back into the chat.
 
-**RAG Chat** (`rag-llm`) builds directly on the Phase 4 retrieval: it reuses the
-`SemanticSearchEngine` (transformers.js embeddings + the in-memory vector store)
-and adds a WebLLM generation worker. A question retrieves the top passages,
-which become grounded context for a small instruct model (default Llama-3.2-1B,
-swappable) whose tokens stream back into the chat.
-
-**Sound Mixer** (`sound-mixer`) is a multi-track mixer with a live GPU
-visualizer. It ships built-in loops synthesized in the browser (`loops.ts`) plus
-uploaded-file tracks, each with volume / pan / mute / solo through a Web Audio
-graph (`mixer.ts`). The master bus feeds an `AnalyserNode`; `lib/audio.ts`
-bridges that FFT into a GPU storage buffer each frame, driving a radial spectrum
-analyzer shader. `lib/audio.ts` is a reusable analyser→GPU bridge — any future
-audio-aware demo can bind the same `freqBuffer`.
-
-Demo kinds:
-- **Canvas demos** (shader-fluid, point-cloud, sound-mixer) provide a React-free
-  `init(ctx)` and run under `CanvasHost` with an optional `Controls` side panel.
+Two shapes of demo:
+- **Canvas demos** (shader-fluid, point-cloud, sound-mixer, crossfilter) provide
+  a React-free `init(ctx)` and run under `CanvasHost` with an optional `Controls`
+  side panel.
 - **DOM/inference demos** (semantic-search, rag-llm) provide a `Panel` that takes
   over the main area — WebGPU is the compute/inference backend inside Web
   Workers, so there's no canvas or render loop.
