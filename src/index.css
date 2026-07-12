@@ -556,3 +556,215 @@ button.ghost,
   line-height: 1.5;
   color: var(--text);
 }
+
+/* ---- RAG chat ---- */
+.load-stage {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0.7rem 0;
+}
+.load-stage > span:first-child {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.load-stage .panel-status-sub {
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+.model-select {
+  padding: 0.3rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.75rem;
+}
+.model-select:disabled {
+  opacity: 0.6;
+}
+
+.stop-btn {
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+}
+
+.chat-log {
+  flex: 1;
+  min-height: 220px;
+  overflow-y: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.chat-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-width: 92%;
+}
+.chat-turn.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.chat-turn.assistant {
+  align-self: flex-start;
+}
+
+.chat-bubble {
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.chat-turn.user .chat-bubble {
+  background: rgba(110, 168, 254, 0.15);
+  border: 1px solid rgba(110, 168, 254, 0.3);
+}
+.chat-turn.assistant .chat-bubble {
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.typing {
+  animation: blink 1s steps(2, start) infinite;
+  color: var(--accent);
+}
+@keyframes blink {
+  to {
+    opacity: 0.2;
+  }
+}
+
+.chat-sources {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.chat-sources summary {
+  cursor: pointer;
+  user-select: none;
+}
+.chat-sources ol {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.chat-sources li {
+  line-height: 1.45;
+}
+.src-tag {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.chat-stats {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Sound mixer ---- */
+.mixer-controls .transport {
+  width: 100%;
+  margin: 0 0 0.9rem;
+  padding: 0.55rem;
+  font-size: 0.9rem;
+}
+.mixer-controls .transport.is-playing {
+  background: var(--warn);
+}
+
+.mixer-strips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.strip {
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.strip.is-dimmed {
+  opacity: 0.45;
+}
+
+.strip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.strip-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.strip-x {
+  margin: 0;
+  padding: 0 0.35rem;
+  line-height: 1.2;
+  font-size: 1rem;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+}
+.strip-x:hover {
+  color: var(--error);
+  filter: none;
+}
+
+.strip .control-row {
+  margin-bottom: 0.4rem;
+}
+
+.strip-btns {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+.mini {
+  flex: 1;
+  margin: 0;
+  padding: 0.3rem;
+  font-size: 0.72rem;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.mini:hover {
+  color: var(--text);
+  filter: none;
+}
+.mini.mute-on {
+  background: rgba(255, 128, 128, 0.18);
+  border-color: rgba(255, 128, 128, 0.5);
+  color: var(--error);
+}
+.mini.solo-on {
+  background: rgba(255, 207, 110, 0.18);
+  border-color: rgba(255, 207, 110, 0.5);
+  color: var(--warn);
+}
+
+.mixer-add {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.7rem;
+}

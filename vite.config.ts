@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // COOP/COEP enable cross-origin isolation, which unlocks SharedArrayBuffer —
-// transformers.js and WebLLM (Phases 4/5/7) rely on it, and without these
-// headers model loading fails in confusing ways.
+// transformers.js and WebLLM (semantic-search, rag-llm) rely on it, and without
+// these headers model loading fails in confusing ways.
 //
 // COEP is `credentialless` (not `require-corp`) so cross-origin model files
 // from the Hugging Face CDN load without needing a CORP header on their

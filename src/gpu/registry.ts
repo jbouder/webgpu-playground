@@ -5,6 +5,10 @@ import { pointCloudDemo } from '../demos/point-cloud'
 import { PointCloudControls } from '../demos/point-cloud/Controls'
 import { semanticSearchDemo } from '../demos/semantic-search'
 import { SemanticSearchPanel } from '../demos/semantic-search/Panel'
+import { ragLlmDemo } from '../demos/rag-llm'
+import { RagChatPanel } from '../demos/rag-llm/Panel'
+import { soundMixerDemo } from '../demos/sound-mixer'
+import { SoundMixerControls } from '../demos/sound-mixer/Controls'
 
 /**
  * Every demo in the playground, in sidebar order. This is the ONE place that
@@ -19,7 +23,9 @@ import { SemanticSearchPanel } from '../demos/semantic-search/Panel'
 export const demos: Demo[] = [
   { ...shaderFluidDemo, Controls: ShaderFluidControls },
   { ...pointCloudDemo, Controls: PointCloudControls },
+  { ...soundMixerDemo, Controls: SoundMixerControls },
   { ...semanticSearchDemo, Panel: SemanticSearchPanel },
+  { ...ragLlmDemo, Panel: RagChatPanel },
 ]
 
 export function getDemo(id: string): Demo | undefined {

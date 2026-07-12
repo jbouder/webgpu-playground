@@ -36,7 +36,7 @@ with hardware acceleration enabled. Browsers without WebGPU get a graceful
   `requestAnimationFrame` loop, a `ResizeObserver` applying `devicePixelRatio`,
   and device-loss / unsupported UI. Swapping demos = `dispose()` old, `init()`
   new (driven by a React `key`).
-- **`src/host/Switcher.tsx`** — dropdown reading the registry.
+- **`src/host/Sidebar.tsx`** — navigation list reading the registry.
 - **`src/demos/*/`** — each demo. GPU code is React-free; WGSL is imported with
   Vite's `?raw` suffix (`import shader from './shader.wgsl?raw'`) so editing a
   shader hot-reloads.
@@ -50,8 +50,8 @@ with hardware acceleration enabled. Browsers without WebGPU get a graceful
 
 ## Cross-origin isolation (COOP/COEP) — required
 
-The inference libraries used in later phases (transformers.js, WebLLM) need
-`SharedArrayBuffer`, which requires the page to be **cross-origin isolated**.
+The inference libraries (transformers.js, WebLLM) need `SharedArrayBuffer`,
+which requires the page to be **cross-origin isolated**.
 The dev server and `vite preview` already send these headers (see
 `vite.config.ts`):
 
@@ -106,8 +106,8 @@ add_header Cross-Origin-Embedder-Policy credentialless always;
 1. **No SSR.** `navigator.gpu` only exists in the browser (Vite SPA, no SSR).
 2. **GPU modules stay React-free.** Anything under `src/demos/*/` that touches
    the device is importable without React.
-3. **Inference runs in Web Workers** (Phases 4/5/7) so the render loop never
-   stutters.
+3. **Inference runs in Web Workers** (semantic-search, rag-llm) so the render
+   loop never stutters.
 4. **COOP/COEP headers required** (above).
 5. **Unhappy paths handled:** no-WebGPU browsers, `GPUDevice` loss, and canvas
    resize with `devicePixelRatio`.
@@ -120,9 +120,8 @@ add_header Cross-Origin-Embedder-Policy credentialless always;
 - [x] **Phase 2 — 3D point cloud** (`point-cloud`).
 - [x] **Phase 3 — Fluid scroll background** (`fluid-scroll`).
 - [x] **Phase 4 — Client-side semantic search** (`semantic-search`).
-- [ ] Phase 5 — RAG with browser LLM
-- [ ] Phase 6 — Music-reactive visuals
-- [ ] Phase 7 — LLM trivia game
+- [x] **Phase 5 — RAG chat with a browser LLM** (`rag-llm`).
+- [x] **Phase 6 — Sound mixer + reactive visualizer** (`sound-mixer`).
 
 The animated shader and the fluid background are exposed through a combined
 **Shader + Fluid** (`shader-fluid`) demo that composites the plasma shader
@@ -131,12 +130,26 @@ each independently toggleable (fluid off by default). The standalone
 `shader-fullscreen` and `fluid-scroll` modules remain and are reused by it. The
 **3D Point Cloud** is its own demo (with a 1k–1M point-count slider).
 
+**RAG Chat** (`rag-llm`) builds directly on the Phase 4 retrieval: it reuses the
+`SemanticSearchEngine` (transformers.js embeddings + the in-memory vector store)
+and adds a WebLLM generation worker. A question retrieves the top passages,
+which become grounded context for a small instruct model (default Llama-3.2-1B,
+swappable) whose tokens stream back into the chat.
+
+**Sound Mixer** (`sound-mixer`) is a multi-track mixer with a live GPU
+visualizer. It ships built-in loops synthesized in the browser (`loops.ts`) plus
+uploaded-file tracks, each with volume / pan / mute / solo through a Web Audio
+graph (`mixer.ts`). The master bus feeds an `AnalyserNode`; `lib/audio.ts`
+bridges that FFT into a GPU storage buffer each frame, driving a radial spectrum
+analyzer shader. `lib/audio.ts` is a reusable analyser→GPU bridge — any future
+audio-aware demo can bind the same `freqBuffer`.
+
 Demo kinds:
-- **Canvas demos** provide a React-free `init(ctx)` and run under `CanvasHost`
-  with an optional `Controls` side panel.
-- **DOM/inference demos** (semantic search) provide a `Panel` that takes over
-  the main area — WebGPU is the compute backend inside a Web Worker, so there's
-  no canvas or render loop.
+- **Canvas demos** (shader-fluid, point-cloud, sound-mixer) provide a React-free
+  `init(ctx)` and run under `CanvasHost` with an optional `Controls` side panel.
+- **DOM/inference demos** (semantic-search, rag-llm) provide a `Panel` that takes
+  over the main area — WebGPU is the compute/inference backend inside Web
+  Workers, so there's no canvas or render loop.
 
 ## Tech notes
 
