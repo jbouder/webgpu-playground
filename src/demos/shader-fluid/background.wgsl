@@ -32,7 +32,7 @@ fn fs(@builtin(position) fragCoord : vec4f) -> @location(0) vec4f {
   let mouse = vec2f(m.x, -m.y);
 
   let t = u.time;
-  // Slowly warp the field to make the plasma ripple rather than drift.
+  // Frequency, animation speed, and amplitude here make the plasma gently ripple.
   let wave = vec2f(
     sin(uv.y * 4.0 + t * 0.8),
     cos(uv.x * 4.0 - t * 0.7),

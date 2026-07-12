@@ -63,6 +63,11 @@ export function ImageLabControls({ instance }: { instance: DemoInstance }) {
     }
   }
 
+  const onImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCameraActive(false)
+    void onFile(e)
+  }
+
   const splitOn = inst.params.split >= 0
 
   const startCamera = async () => {
@@ -91,10 +96,7 @@ export function ImageLabControls({ instance }: { instance: DemoInstance }) {
         <span className="group-label">Source</span>
         <label className="file-btn mixer-add">
           {loading ? 'Decoding…' : '⬆ Upload image'}
-          <input type="file" accept="image/*" hidden onChange={(e) => {
-            setCameraActive(false)
-            void onFile(e)
-          }} disabled={loading} />
+          <input type="file" accept="image/*" hidden onChange={onImageFile} disabled={loading} />
         </label>
         <div className="row">
           <button type="button" className="ghost" onClick={() => void startCamera()} disabled={loading || cameraActive}>
