@@ -7,11 +7,15 @@ import {
 } from '../../lib/gpu-image'
 
 /** Extra surface the Controls panel pokes. GPU state lives here, not in React. */
-export interface ImageLabInstance extends DemoInstance {
-  /** All filter knobs, plus the before/after wipe position (<0 = disabled). */
-  params: ImageFilters & { split: number }
+export interface MediaLabInstance extends DemoInstance {
+  /** All filter knobs plus view options. */
+  params: ImageFilters & { split: number; mirror: boolean }
   /** Decode + upload a user-picked image file. Rejects if it can't decode. */
   loadFile(file: File): Promise<void>
+  /** Start processing a live camera feed. */
+  startCamera(): Promise<void>
+  /** Stop the live camera feed and return to the last still image. */
+  stopCamera(): void
   /** Restore the neutral (identity) filter chain. */
   reset(): void
   /** Signal that a filter param changed and the chain must be re-run. */
@@ -119,12 +123,18 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
   const pipeline = new ImagePipeline(device)
   const blitter = new ImageBlitter(device, format)
 
-  const params: ImageFilters & { split: number } = { ...defaultFilters(), split: -1 }
+  const params: ImageFilters & { split: number; mirror: boolean } = {
+    ...defaultFilters(),
+    split: -1,
+    mirror: true,
+  }
   const info = { width: 0, height: 0 }
 
   let dirty = true
   let resultView: GPUTextureView | null = null
   let onImageChange: (() => void) | null = null
+  let stream: MediaStream | null = null
+  let video: HTMLVideoElement | null = null
 
   const applyImage = (img: LoadedImage) => {
     pipeline.upload(img.bitmap, img.width, img.height)
@@ -142,10 +152,16 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
 
   const frame = () => {
     if (!pipeline.ready) return
+    const isLive = stream?.active && video && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    if (isLive && video.videoWidth > 0) {
+      info.width = video.videoWidth
+      info.height = video.videoHeight
+      pipeline.upload(video, info.width, info.height)
+    }
     const encoder = device.createCommandEncoder({ label: 'image-lab-frame' })
     // Re-run the filter chain only when something changed; the work textures
     // retain the result between frames, so the blit is all that's needed otherwise.
-    if (dirty || !resultView) {
+    if (isLive || dirty || !resultView) {
       resultView = pipeline.run(encoder, params)
       dirty = false
     }
@@ -159,20 +175,61 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
       pipeline.originalView,
       resultView,
       params.split,
+      params.mirror && isLive ? 1 : 0,
     )
     device.queue.submit([encoder.finish()])
   }
 
-  const instance: ImageLabInstance = {
+  const stopCamera = () => {
+    stream?.getTracks().forEach((track) => track.stop())
+    stream = null
+    if (video) video.srcObject = null
+    video = null
+  }
+
+  const instance: MediaLabInstance = {
     frame,
     dispose() {
+      stopCamera()
       pipeline.dispose()
       blitter.dispose()
     },
     params,
     async loadFile(file: File) {
+      stopCamera()
       applyImage(await decode(file))
     },
+    async startCamera() {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('This browser does not expose camera access (getUserMedia).')
+      }
+      stopCamera()
+      const nextStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+        audio: false,
+      })
+      const nextVideo = document.createElement('video')
+      nextVideo.muted = true
+      nextVideo.playsInline = true
+      nextVideo.autoplay = true
+      nextVideo.srcObject = nextStream
+      try {
+        await new Promise<void>((resolve, reject) => {
+          nextVideo.onloadedmetadata = () => resolve()
+          nextVideo.onerror = () => reject(new Error('The camera stream failed to load.'))
+        })
+        await nextVideo.play()
+      } catch (err) {
+        nextStream.getTracks().forEach((track) => track.stop())
+        throw err
+      }
+      stream = nextStream
+      video = nextVideo
+      info.width = video.videoWidth
+      info.height = video.videoHeight
+      onImageChange?.()
+    },
+    stopCamera,
     reset() {
       Object.assign(params, defaultFilters(), { split: -1 })
       dirty = true
@@ -196,8 +253,8 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
 // React-free: the registry attaches the Controls component.
 export const imageLabDemo: Demo = {
   id: 'image-lab',
-  title: 'Image Lab',
+  title: 'Media Lab',
   description:
-    'Upload an image and stack GPU compute filters — exposure, contrast, saturation, gaussian blur, unsharp, Sobel edges, vignette. Each filter is a compute pass over ping-pong rgba16float textures; drag the before/after split to compare. The pipeline (lib/gpu-image.ts) is reused by the webcam demo.',
+    'Upload images or process a live camera feed with GPU effects — exposure, contrast, saturation, gaussian blur, unsharp, Sobel edges, vignette, and grayscale. Compare the original and processed media with a before/after split.',
   init,
 }

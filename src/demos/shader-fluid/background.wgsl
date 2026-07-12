@@ -32,8 +32,13 @@ fn fs(@builtin(position) fragCoord : vec4f) -> @location(0) vec4f {
   let mouse = vec2f(m.x, -m.y);
 
   let t = u.time;
+  // Slowly warp the field to make the plasma ripple rather than drift.
+  let wave = vec2f(
+    sin(uv.y * 4.0 + t * 0.8),
+    cos(uv.x * 4.0 - t * 0.7),
+  ) * 0.08;
   var acc = 0.0;
-  let q = uv * 3.0;
+  let q = (uv + wave) * 3.0;
   acc += sin(q.x + t);
   acc += sin(q.y * 1.3 + t * 1.1);
   acc += sin((q.x + q.y) * 0.7 + t * 0.7);
@@ -46,7 +51,11 @@ fn fs(@builtin(position) fragCoord : vec4f) -> @location(0) vec4f {
   );
 
   let glow = 0.12 / (r * r + 0.05);
-  let col = base + glow * vec3f(0.15, 0.25, 0.4);
+  var col = base + glow * vec3f(0.15, 0.25, 0.4);
+  // CRT-style scanlines and a soft vignette give the field more depth.
+  let scanline = 0.92 + 0.08 * sin(fragCoord.y * 1.8 + t * 3.0);
+  let vignette = 1.0 - 0.28 * smoothstep(0.35, 1.4, dot(uv, uv));
+  col *= scanline * vignette;
 
   return vec4f(clamp(col, vec3f(0.0), vec3f(1.0)), 1.0);
 }

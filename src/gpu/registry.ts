@@ -7,14 +7,10 @@ import { pointCloudDemo } from '../demos/point-cloud'
 import { PointCloudControls } from '../demos/point-cloud/Controls'
 import { imageLabDemo } from '../demos/image-lab'
 import { ImageLabControls } from '../demos/image-lab/Controls'
-import { webcamFxDemo } from '../demos/webcam-fx'
-import { WebcamFxControls } from '../demos/webcam-fx/Controls'
 import { semanticSearchDemo } from '../demos/semantic-search'
 import { SemanticSearchPanel } from '../demos/semantic-search/Panel'
 import { ragLlmDemo } from '../demos/rag-llm'
 import { RagChatPanel } from '../demos/rag-llm/Panel'
-import { soundMixerDemo } from '../demos/sound-mixer'
-import { SoundMixerControls } from '../demos/sound-mixer/Controls'
 import { crossfilterDemo } from '../demos/crossfilter'
 import { CrossfilterControls } from '../demos/crossfilter/Controls'
 import { xpbdDemo } from '../demos/xpbd'
@@ -35,8 +31,6 @@ export const demos: Demo[] = [
   { ...shaderFluidDemo, Controls: ShaderFluidControls },
   { ...pointCloudDemo, Controls: PointCloudControls },
   { ...imageLabDemo, Controls: ImageLabControls },
-  { ...webcamFxDemo, Controls: WebcamFxControls },
-  { ...soundMixerDemo, Controls: SoundMixerControls },
   { ...crossfilterDemo, Controls: CrossfilterControls },
   { ...xpbdDemo, Controls: XpbdControls },
   { ...semanticSearchDemo, Panel: SemanticSearchPanel },

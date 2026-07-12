@@ -42,10 +42,10 @@ with hardware acceleration enabled. Browsers without WebGPU get a graceful
   Vite's `?raw` suffix (`import shader from './shader.wgsl?raw'`) so editing a
   shader hot-reloads.
 - **`src/lib/`** — framework-agnostic helpers reused across demos: `chunk.ts` +
-  `vector-store.ts` (retrieval), `audio.ts` (AnalyserNode→GPU FFT bridge),
-  `scales.ts` (CPU-side linear scales/ticks for axes and hit-testing),
-  `gpu-image.ts` (`ImagePipeline` — ping-pong rgba16float compute filter chain —
-  and `ImageBlitter`, shared by the image and webcam demos).
+  `vector-store.ts` (retrieval), `scales.ts` (CPU-side linear scales/ticks for
+  axes and hit-testing), `gpu-image.ts` (`ImagePipeline` — ping-pong
+  rgba16float compute filter chain — and `ImageBlitter`, shared by still-image
+  and live-camera sources).
 
 ### Adding a demo
 
@@ -122,34 +122,21 @@ add_header Cross-Origin-Embedder-Policy credentialless always;
 
 Each is a self-contained module under `src/demos/`, chosen from the sidebar.
 
-- **Shader + Fluid** (`shader-fluid`) — an animated plasma shader composited with
-  a Gray-Scott reaction-diffusion fluid (alpha-blended overlay), each layer
-  independently toggleable. Built from the standalone `shader-fullscreen` and
-  `fluid-scroll` modules, which it reuses.
+- **Shader + Fluid** (`shader-fluid`) — an animated plasma shader with ripple
+  distortion, scanlines, and vignette, composited with a Gray-Scott
+  reaction-diffusion fluid (alpha-blended overlay). Each layer is independently
+  toggleable. Built from the standalone `shader-fullscreen` and `fluid-scroll`
+  modules, which it reuses.
 - **3D Point Cloud** (`point-cloud`) — instanced rendering of a procedural galaxy
   with an orbit camera and depth buffer, and a 1k–1M point-count slider.
-- **Image Lab** (`image-lab`) — upload an image (or use the synthetic sample) and
-  stack GPU compute filters: exposure, contrast, saturation, temperature,
-  separable gaussian blur, unsharp, Sobel edges, vignette, grayscale. Each filter
-  is a compute pass over ping-pong `rgba16float` textures (one pass per step, so
-  reads see the previous pass's full output); the chain only re-runs when a value
-  changes, and a draggable before/after split wipes the result against the
-  original. The pipeline and aspect-fit blit live in the reusable
-  `lib/gpu-image.ts` (`ImagePipeline` / `ImageBlitter`), so the webcam demo reuses
-  the same filter chain over live video frames.
-- **Webcam FX** (`webcam-fx`) — the same GPU filter chain applied to a live
-  `getUserMedia` feed in real time. Each frame is copied into a texture
-  (`copyExternalImageToTexture`) and pushed through `lib/gpu-image.ts`, then
-  blitted with an optional mirror (selfie view) and before/after split. Includes
-  one-click presets (B&W, Edges, Dreamy, Cool, Warm) and a PNG snapshot. Camera
-  permission denial / no-camera / camera-busy are handled with a friendly retry;
-  the feed never leaves the browser.
-- **Sound Mixer** (`sound-mixer`) — a multi-track mixer with a live GPU
-  visualizer. Built-in loops synthesized in the browser (`loops.ts`) plus
-  uploaded-file tracks, each with volume / pan / mute / solo through a Web Audio
-  graph (`mixer.ts`). The master bus feeds an `AnalyserNode`; `lib/audio.ts`
-  bridges that FFT into a GPU storage buffer each frame, driving a radial
-  spectrum-analyzer shader.
+- **Media Lab** (`image-lab`) — upload an image (or use the synthetic sample) or
+  process a live `getUserMedia` camera feed with the same GPU compute filters:
+  exposure, contrast, saturation, temperature, separable gaussian blur, unsharp,
+  Sobel edges, vignette, and grayscale. Each filter is a compute pass over
+  ping-pong `rgba16float` textures (one pass per step, so reads see the previous
+  pass's full output). Still images only re-run when a value changes; live video
+  runs in real time with optional selfie mirroring. A before/after split wipes the
+  result against the original, and the feed never leaves the browser.
 - **Crossfilter Dashboard** (`crossfilter`) — five linked panels (three
   histograms, a time series, a latency×cost density heatmap) over 1M–10M rows of
   synthetic LLM telemetry. Drag a range on any histogram and every other panel
@@ -168,8 +155,8 @@ Each is a self-contained module under `src/demos/`, chosen from the sidebar.
   stream back into the chat.
 
 Two shapes of demo:
-- **Canvas demos** (shader-fluid, point-cloud, image-lab, webcam-fx, sound-mixer,
-  crossfilter) provide a React-free `init(ctx)` and run under `CanvasHost` with an
+- **Canvas demos** (shader-fluid, point-cloud, image-lab, crossfilter) provide a
+  React-free `init(ctx)` and run under `CanvasHost` with an
   optional `Controls` side panel.
 - **DOM/inference demos** (semantic-search, rag-llm) provide a `Panel` that takes
   over the main area — WebGPU is the compute/inference backend inside Web
