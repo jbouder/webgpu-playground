@@ -1,4 +1,6 @@
 import type { Demo } from './types'
+import { holotableDemo } from '../demos/holotable'
+import { HolotableControls } from '../demos/holotable/Controls'
 import { shaderFluidDemo } from '../demos/shader-fluid'
 import { ShaderFluidControls } from '../demos/shader-fluid/Controls'
 import { pointCloudDemo } from '../demos/point-cloud'
@@ -27,6 +29,7 @@ import { CrossfilterControls } from '../demos/crossfilter/Controls'
  * are reused by it.
  */
 export const demos: Demo[] = [
+  { ...holotableDemo, Controls: HolotableControls },
   { ...shaderFluidDemo, Controls: ShaderFluidControls },
   { ...pointCloudDemo, Controls: PointCloudControls },
   { ...imageLabDemo, Controls: ImageLabControls },
