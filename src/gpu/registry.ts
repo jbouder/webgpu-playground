@@ -1,8 +1,8 @@
 import type { Demo } from './types'
 import { volumetricHologramDemo } from '../demos/volumetric-hologram'
 import { VolumetricHologramControls } from '../demos/volumetric-hologram/Controls'
-import { shaderFluidDemo } from '../demos/shader-fluid'
-import { ShaderFluidControls } from '../demos/shader-fluid/Controls'
+import { fluidFxDemo } from '../demos/fluid-fx'
+import { FluidFxControls } from '../demos/fluid-fx/Controls'
 import { pointCloudDemo } from '../demos/point-cloud'
 import { PointCloudControls } from '../demos/point-cloud/Controls'
 import { imageLabDemo } from '../demos/image-lab'
@@ -21,14 +21,13 @@ import { XpbdControls } from '../demos/xpbd/Controls'
  * pairs a React-free GPU module with its optional React Controls / Panel —
  * keeping the demo modules themselves importable without React.
  *
- * "Shader + Fluid" combines the animated shader and the reaction-diffusion
- * fluid into one composited, layer-toggleable demo. The standalone
- * shader-fullscreen and fluid-scroll modules still live under src/demos/ and
- * are reused by it.
+ * "Fluid FX" is a multi-mode GPU effects playground (interactive Navier–Stokes
+ * fluid, curl-noise particle flow field, and a passive warped color field), all
+ * sharing one cosine-palette color picker.
  */
 export const demos: Demo[] = [
   { ...volumetricHologramDemo, Controls: VolumetricHologramControls },
-  { ...shaderFluidDemo, Controls: ShaderFluidControls },
+  { ...fluidFxDemo, Controls: FluidFxControls },
   { ...pointCloudDemo, Controls: PointCloudControls },
   { ...imageLabDemo, Controls: ImageLabControls },
   { ...crossfilterDemo, Controls: CrossfilterControls },

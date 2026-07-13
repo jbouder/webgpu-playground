@@ -68,12 +68,18 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
     const deltas = makeBuffer('collision-deltas', count * 3 * 4, storage)
     device.queue.writeBuffer(positions, 0, cloth.positions); device.queue.writeBuffer(previous, 0, cloth.positions)
     const constraints = cloth.links.map((batch, i) => { const a = new ArrayBuffer(Math.max(16, batch.length * 16)); const u = new Uint32Array(a); const f = new Float32Array(a); batch.forEach((c, k) => { u[k * 4] = c[0]; u[k * 4 + 1] = c[1]; f[k * 4 + 2] = c[2]; f[k * 4 + 3] = c[3] }); const b = makeBuffer(`constraints-${i}`, a.byteLength, storage); device.queue.writeBuffer(b, 0, a); return b })
-    const hash = new SpatialHash(device, count, params.particleRadius * 2)
+    // The 16^3-cell grid must span the whole cloth/sphere/floor domain (x,z in [-4,4],
+    // y in [-2,6]), so the cell size is set by coverage, not the particle radius. It stays
+    // comfortably larger than the 2*radius interaction distance, keeping the +/-1 neighbour
+    // search complete for every supported radius.
+    const hash = new SpatialHash(device, count, 0.5, [-4, -2, -4], [16, 16, 16])
     const integrateGroup = device.createBindGroup({ label: 'xpbd-integrate-group', layout: integrate.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: paramBuffer } }, { binding: 1, resource: { buffer: positions } }, { binding: 2, resource: { buffer: previous } }, { binding: 3, resource: { buffer: velocities } }] })
     const distanceGroups = constraints.map((b, i) => device.createBindGroup({ label: `xpbd-distance-group-${i}`, layout: distance.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: paramBuffer } }, { binding: 1, resource: { buffer: positions } }, { binding: 2, resource: { buffer: b } }] }))
     const collisionEntries = [{ binding: 0, resource: { buffer: paramBuffer } }, { binding: 1, resource: { buffer: positions } }, { binding: 2, resource: { buffer: hash.cellStarts } }, { binding: 3, resource: { buffer: hash.sortedIndices } }, { binding: 4, resource: { buffer: deltas } }, { binding: 5, resource: { buffer: hash.gridUniform } }]
     const collisionGroup = device.createBindGroup({ label: 'xpbd-collision-group', layout: collision.getBindGroupLayout(0), entries: collisionEntries })
-    const collisionApplyGroup = device.createBindGroup({ label: 'xpbd-collision-apply-group', layout: collisionApply.getBindGroupLayout(0), entries: collisionEntries })
+    // The `apply` entry point only reads params/positions/deltas, so its auto-derived
+    // layout omits the grid/starts/indices bindings — pass just the entries it uses.
+    const collisionApplyGroup = device.createBindGroup({ label: 'xpbd-collision-apply-group', layout: collisionApply.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: paramBuffer } }, { binding: 1, resource: { buffer: positions } }, { binding: 4, resource: { buffer: deltas } }] })
     const finalizeGroup = device.createBindGroup({ label: 'xpbd-finalize-group', layout: finalize.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: paramBuffer } }, { binding: 1, resource: { buffer: positions } }, { binding: 2, resource: { buffer: previous } }, { binding: 3, resource: { buffer: velocities } }, { binding: 4, resource: { buffer: dampingBuffer } }] })
     const normalsGroup = device.createBindGroup({ label: 'xpbd-normals-group', layout: normals.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: paramBuffer } }, { binding: 1, resource: { buffer: positions } }, { binding: 2, resource: { buffer: normal } }] })
     const renderGroup = device.createBindGroup({ label: 'xpbd-render-group', layout: render.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: renderBuffer } }, { binding: 1, resource: { buffer: positions } }, { binding: 2, resource: { buffer: normal } }] })
@@ -91,7 +97,7 @@ async function init(ctx: DemoContext): Promise<DemoInstance> {
     if (disposed || !resources || (params.paused && !stepRequested)) return
     stepRequested = false; const r = resources; const h = Math.min(dt, 1 / 60) / Math.max(4, Math.min(20, Math.floor(params.substeps)))
     const u = new ArrayBuffer(PARAM_BYTES); const f = new Float32Array(u); const ints = new Uint32Array(u); f.set([params.gravity, params.wind * Math.sin(elapsed), h, params.particleRadius]); ints[4] = r.count; ints[5] = r.resolution; device.queue.writeBuffer(paramBuffer, 0, u); device.queue.writeBuffer(dampingBuffer, 0, new Float32Array([params.damping]))
-    const vp = mat4.create(); const eye = vec3.fromValues(7 * Math.cos(elevation) * Math.sin(azimuth), 3 + 7 * Math.sin(elevation), 7 * Math.cos(elevation) * Math.cos(azimuth)); mat4.perspective(vp, Math.PI / 4, Math.max(canvas.width, 1) / Math.max(canvas.height, 1), .1, 50); mat4.lookAt(vp, eye, vec3.fromValues(0, 1.4, 0), vec3.fromValues(0, 1, 0)); const ru = new Float32Array(20); ru.set(vp); ru.set([4, 7, 4, 0], 16); device.queue.writeBuffer(renderBuffer, 0, ru)
+    const vp = mat4.create(); const view = mat4.create(); const eye = vec3.fromValues(7 * Math.cos(elevation) * Math.sin(azimuth), 3 + 7 * Math.sin(elevation), 7 * Math.cos(elevation) * Math.cos(azimuth)); mat4.perspective(vp, Math.PI / 4, Math.max(canvas.width, 1) / Math.max(canvas.height, 1), .1, 50); mat4.lookAt(view, eye, vec3.fromValues(0, 1.4, 0), vec3.fromValues(0, 1, 0)); mat4.multiply(vp, vp, view); const ru = new Float32Array(20); ru.set(vp); ru.set([4, 7, 4, 0], 16); device.queue.writeBuffer(renderBuffer, 0, ru)
     const encoder = device.createCommandEncoder({ label: 'xpbd-frame' })
     for (let s = 0; s < Math.max(4, Math.min(20, Math.floor(params.substeps))); s++) {
       let pass = encoder.beginComputePass({ label: 'xpbd-integrate-pass' })

@@ -16,8 +16,9 @@ const SPHERE_RADIUS = 0.8;
   let cell = hashCell(c + vec3i(x,y,z), grid);
   for (var n = starts[cell]; n < starts[cell + 1u]; n++) { let j = indices[n]; if (j <= id.x) { continue; }
    let b = pos[j]; let d = b.xyz-a.xyz; let l=max(length(d),EPSILON); if(l < 2.0*p.radius) { let q=(2.0*p.radius-l)*0.5*d/l;
-    atomicAdd(&deltas[id.x*3u], i32(q.x*SCALE)); atomicAdd(&deltas[id.x*3u+1u],i32(q.y*SCALE)); atomicAdd(&deltas[id.x*3u+2u],i32(q.z*SCALE));
-    atomicAdd(&deltas[j*3u],-i32(q.x*SCALE)); atomicAdd(&deltas[j*3u+1u],-i32(q.y*SCALE)); atomicAdd(&deltas[j*3u+2u],-i32(q.z*SCALE)); }
+    // d points a->b, so push a back along -q and j forward along +q to separate them.
+    atomicAdd(&deltas[id.x*3u], -i32(q.x*SCALE)); atomicAdd(&deltas[id.x*3u+1u],-i32(q.y*SCALE)); atomicAdd(&deltas[id.x*3u+2u],-i32(q.z*SCALE));
+    atomicAdd(&deltas[j*3u],i32(q.x*SCALE)); atomicAdd(&deltas[j*3u+1u],i32(q.y*SCALE)); atomicAdd(&deltas[j*3u+2u],i32(q.z*SCALE)); }
   } } } }
 }
 @compute @workgroup_size(64) fn apply(@builtin(global_invocation_id) id: vec3u) {
