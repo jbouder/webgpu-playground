@@ -122,11 +122,18 @@ add_header Cross-Origin-Embedder-Policy credentialless always;
 
 Each is a self-contained module under `src/demos/`, chosen from the sidebar.
 
-- **Shader + Fluid** (`shader-fluid`) — an animated plasma shader with ripple
-  distortion, scanlines, and vignette, composited with a Gray-Scott
-  reaction-diffusion fluid (alpha-blended overlay). Each layer is independently
-  toggleable. Built from the standalone `shader-fullscreen` and `fluid-scroll`
-  modules, which it reuses.
+- **Fluid FX** (`fluid-fx`) — a GPU effects playground with three toggleable
+  modes sharing one Inigo Quilez cosine palette (recolorable, with a hue
+  shift):
+  - **Fluid** — an interactive stable-fluids (Navier–Stokes) solver on a fixed
+    320×180 grid. Each frame runs splat → advect → divergence → Jacobi pressure
+    solve → gradient-subtract → dye-advect as compute passes over ping-pong
+    `rgba16float` fields. Drag to inject swirling dye; auto-swirls when idle.
+  - **Flow** — ~90k GPU particles advected through a curl-noise flow field, drawn
+    as instanced soft points and accumulated into an HDR trail texture (a per-frame
+    fade pass gives the trails). Drag to push the field; Speed/Trail sliders.
+  - **Ambient** — a passive two-level domain-warped fbm mapped through the palette;
+    the pointer bends the field. Speed/Warp sliders.
 - **3D Point Cloud** (`point-cloud`) — instanced rendering of a procedural galaxy
   with an orbit camera and depth buffer, and a 1k–1M point-count slider.
 - **Media Lab** (`image-lab`) — upload an image (or use the synthetic sample) or
@@ -155,7 +162,7 @@ Each is a self-contained module under `src/demos/`, chosen from the sidebar.
   stream back into the chat.
 
 Two shapes of demo:
-- **Canvas demos** (shader-fluid, point-cloud, image-lab, crossfilter) provide a
+- **Canvas demos** (fluid-fx, point-cloud, image-lab, crossfilter, xpbd) provide a
   React-free `init(ctx)` and run under `CanvasHost` with an
   optional `Controls` side panel.
 - **DOM/inference demos** (semantic-search, rag-llm) provide a `Panel` that takes
