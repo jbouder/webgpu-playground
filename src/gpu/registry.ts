@@ -15,6 +15,8 @@ import { crossfilterDemo } from '../demos/crossfilter'
 import { CrossfilterControls } from '../demos/crossfilter/Controls'
 import { xpbdDemo } from '../demos/xpbd'
 import { XpbdControls } from '../demos/xpbd/Controls'
+import { observabilityDemo } from '../demos/observability'
+import { ObservabilityPage } from '../demos/observability/ObservabilityPage'
 
 /**
  * Every demo in the playground, in sidebar order. This is the ONE place that
@@ -34,6 +36,7 @@ export const demos: Demo[] = [
   { ...xpbdDemo, Controls: XpbdControls },
   { ...semanticSearchDemo, Panel: SemanticSearchPanel },
   { ...ragLlmDemo, Panel: RagChatPanel },
+  { ...observabilityDemo, Panel: ObservabilityPage },
 ]
 
 export function getDemo(id: string): Demo | undefined {
