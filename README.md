@@ -120,8 +120,13 @@ add_header Cross-Origin-Embedder-Policy credentialless always;
 
 ## Demos
 
-Each is a self-contained module under `src/demos/`, chosen from the sidebar.
+Each is a self-contained module under `src/demos/`, chosen from the sidebar
+(listed here in sidebar order).
 
+- **Volumetric Hologram** (`volumetric-hologram`) — an SDF density field
+  raymarched front-to-back in a single fullscreen fragment pass and shaded with
+  fresnel edges, scanlines, and chromatic drift. Drag to orbit; sliders for
+  step count, density, hue, fresnel, scanlines, chroma, and flicker.
 - **Fluid FX** (`fluid-fx`) — a GPU effects playground with three toggleable
   modes sharing one Inigo Quilez cosine palette (recolorable, with a hue
   shift):
@@ -153,6 +158,12 @@ Each is a self-contained module under `src/demos/`, chosen from the sidebar.
   panel's histogram on each brush change — the CPU never rescans the rows.
   `engine.ts` (React-free) owns the buffers and brush state; panels render into
   viewports of one canvas (`render.wgsl`). Interactive at 10M rows.
+- **XPBD Physics** (`xpbd`) — a GPU particle-constraint physics engine (Extended
+  Position-Based Dynamics), shown as cloth. Each frame runs a substepped solve:
+  integrate → graph-colored distance constraints → spatial-hash self-collision
+  (plus floor/sphere) → finalize, all as compute passes over storage buffers,
+  then recomputes normals and renders the mesh. Sliders for substeps, gravity,
+  wind, stiffness, and particle radius; drag to orbit.
 - **Semantic Search** (`semantic-search`) — paste a document; transformers.js
   embeds it in a Web Worker (WebGPU backend), and queries retrieve the most
   relevant chunks by cosine similarity, fully local.
@@ -160,14 +171,30 @@ Each is a self-contained module under `src/demos/`, chosen from the sidebar.
   WebLLM generation worker. A question retrieves the top passages as grounded
   context for a small instruct model (default Llama-3.2-1B, swappable); tokens
   stream back into the chat.
+- **LLM Observability** (`observability`) — a toggle-driven DX/debugging demo. It
+  captures live browser signals (console, network, errors, performance, and a
+  React error boundary), runs them through a deterministic reduction pipeline
+  (redact → sample → dedupe/cluster → normalize → stack-frame extraction) of
+  pure, independently toggleable functions, then uses an in-browser WebLLM model
+  to *narrate* the reduced digest — clustering, severity, category, and
+  advisory-only remediations. The LLM is the narration layer, not the brain:
+  all detection and classification-by-rule is deterministic and nothing the
+  model emits triggers an action. Redaction is on by default (leaking is the
+  opt-in demo); WebLLM runs in a Web Worker by default, with a toggle to move it
+  to the main thread and demonstrate jank; structured output is
+  XGrammar/JSON-schema-constrained. Degrades gracefully with no WebGPU — the LLM
+  disables while capture and reduction keep running.
 
-Two shapes of demo:
-- **Canvas demos** (fluid-fx, point-cloud, image-lab, crossfilter, xpbd) provide a
-  React-free `init(ctx)` and run under `CanvasHost` with an
-  optional `Controls` side panel.
+Three shapes of demo:
+- **Canvas demos** (volumetric-hologram, fluid-fx, point-cloud, image-lab,
+  crossfilter, xpbd) provide a React-free `init(ctx)` and run under `CanvasHost`
+  with an optional `Controls` side panel.
 - **DOM/inference demos** (semantic-search, rag-llm) provide a `Panel` that takes
   over the main area — WebGPU is the compute/inference backend inside Web
   Workers, so there's no canvas or render loop.
+- **DOM/observability demo** (observability) also provides a `Panel`, but WebGPU
+  backs an in-browser WebLLM model that narrates deterministically captured and
+  reduced browser telemetry.
 
 ## Tech notes
 
